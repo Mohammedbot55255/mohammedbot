@@ -59,34 +59,34 @@ print("EMA50:", ema50)
 print("MACD:", macd_value)
 print("MACD SIGNAL:", macd_signal)
 
-# اشارة شراء
-if ema20 > ema50 and macd_value > macd_signal:
+        # إشارة شراء
+        if ema20 > ema50 and macd_value > macd_signal:
 
-    requests.post(
-        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-        data={
-            "chat_id": CHAT_ID,
-            "text": f"BUY SIGNAL BTCUSDT\nPrice: {current_price}"
-        }
-    )
+            requests.post(
+                f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                data={
+                    "chat_id": CHAT_ID,
+                    "text": f"BUY SIGNAL BTCUSDT\nPrice: {current_price}"
+                }
+            )
 
-# اشارة بيع
-elif ema20 < ema50 and macd_value < macd_signal:
+        # إشارة بيع
+        elif ema20 < ema50 and macd_value < macd_signal:
 
-    requests.post(
-        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-        data={
-            "chat_id": CHAT_ID,
-            "text": f"SELL SIGNAL BTCUSDT\nPrice: {current_price}"
-        }
-    )
+            requests.post(
+                f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                data={
+                    "chat_id": CHAT_ID,
+                    "text": f"SELL SIGNAL BTCUSDT\nPrice: {current_price}"
+                }
+            )
 
-else:
-    print("NO SIGNAL")
+        else:
+            print("NO SIGNAL")
 
-# انتظار دقيقة
-time.sleep(60)
+        # انتظار دقيقة
+        time.sleep(60)
 
-except Exception as e:
-    print("ERROR:", e)
-    time.sleep(30)
+    except Exception as e:
+        print("ERROR:", e)
+        time.sleep(30)
