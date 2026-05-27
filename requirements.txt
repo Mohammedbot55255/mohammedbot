@@ -1,6 +1,4 @@
-python-binance
-python-telegram-bot
-requests
 pandas
 ta
-numpy
+requests
+yfinance

@@ -1,28 +1,19 @@
-from binance.client import Client
 import pandas as pd
 import ta
 import time
 import requests
-
+import yfinance as yf
 
 # بيانات بوت التليجرام
 TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
 CHAT_ID = "662991988"
 
-# تشغيل البايننس تيست نت
-client = Client()
-
 # العملات
 symbols = [
-    "BTCUSDT",
-    "ETHUSDT",
-    "BNBUSDT",
-    "SOLUSDT",
-    "XRPUSDT"
+    "BTC-USD",
+    "ETH-USD",
+    "BNB-USD"
 ]
-
-# حفظ آخر إشارة
-last_signals = {}
 
 while True:
 
@@ -30,94 +21,60 @@ while True:
 
         for symbol in symbols:
 
-            print(f"\n===== {symbol} =====")
-
             # جلب البيانات
-            klines = client.get_klines(
-                symbol=symbol,
-                interval=Client.KLINE_INTERVAL_1MINUTE,
-                limit=100
+            data = yf.download(
+                symbol,
+                period="1d",
+                interval="1m"
             )
 
-            # تحويل البيانات
-            df = pd.DataFrame(klines)
+            df = pd.DataFrame(data)
 
             # سعر الإغلاق
-            df["close"] = df[4].astype(float)
+            df['close'] = df['Close']
 
             # RSI
-            rsi = ta.momentum.RSIIndicator(df["close"])
-            df["RSI"] = rsi.rsi()
+            rsi = ta.momentum.RSIIndicator(df['close'])
+
+            df['RSI'] = rsi.rsi()
 
             # EMA
-            ema20 = df["close"].ewm(span=20).mean().iloc[-1]
-            ema50 = df["close"].ewm(span=50).mean().iloc[-1]
+            ema20 = df['close'].ewm(span=20).mean().iloc[-1]
+            ema50 = df['close'].ewm(span=50).mean().iloc[-1]
 
             # MACD
-            macd = ta.trend.MACD(df["close"])
+            macd = ta.trend.MACD(df['close'])
+
             macd_value = macd.macd().iloc[-1]
             macd_signal = macd.macd_signal().iloc[-1]
 
-            # آخر سعر
-            current_price = df["close"].iloc[-1]
+            # السعر الحالي
+            current_price = df['close'].iloc[-1]
 
-            print("Price:", current_price)
-            print("EMA20:", ema20)
-            print("EMA50:", ema50)
-            print("MACD:", macd_value)
-            print("MACD SIGNAL:", macd_signal)
+            print(symbol)
+            print("PRICE:", current_price)
 
-            # شراء
+            # إشارة شراء
             if ema20 > ema50 and macd_value > macd_signal:
 
-                if last_signals.get(symbol) != "BUY":
+                requests.post(
+                    f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                    data={
+                        "chat_id": CHAT_ID,
+                        "text": f"BUY SIGNAL 🚀\n{symbol}\nPrice: {current_price}"
+                    }
+                )
 
-                    last_signals[symbol] = "BUY"
-
-                    message = f"""
-🚀 BUY SIGNAL
-Coin: {symbol}
-
-Price: {current_price}
-EMA20 > EMA50
-MACD Positive
-"""
-
-                    requests.post(
-                        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-                        data={
-                            "chat_id": CHAT_ID,
-                            "text": message
-                        }
-                    )
-
-                    print("BUY SENT")
-
-            # بيع
+            # إشارة بيع
             elif ema20 < ema50 and macd_value < macd_signal:
 
-                if last_signals.get(symbol) != "SELL":
-
-                    last_signals[symbol] = "SELL"
-
-                    message = f"""
-🔻 SELL SIGNAL
-Coin: {symbol}
-
-Price: {current_price}
-EMA20 < EMA50
-MACD Negative
-"""
-
-                    requests.post(
-                        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-                        data={
-                            "chat_id": CHAT_ID,
-                            "text": message
-                        }
-                    )
-
-                    print("SELL SENT")
+                requests.post(
+                    f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                    data={
+                        "chat_id": CHAT_ID,
+                        "text": f"SELL SIGNAL 🔻\n{symbol}\nPrice: {current_price}"
+                    }
+                )
 
             else:
                 print("NO SIGNAL")
