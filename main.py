@@ -9,7 +9,7 @@ TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
 CHAT_ID = "662991988"
 
 # تشغيل البايننس
-client = Client(testnet=True)
+client = Client(API_KEY, API_SECRET, testnet=True)
 
 # منع تكرار الإشارات
 last_signal = ""
