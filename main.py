@@ -86,3 +86,7 @@ else:
 
 # انتظار دقيقة
 time.sleep(60)
+
+except Exception as e:
+    print("ERROR:", e)
+    time.sleep(30)
