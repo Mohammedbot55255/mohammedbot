@@ -8,7 +8,6 @@ import requests
 TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
 CHAT_ID = "662991988"
 
-requests.get(f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={CHAT_ID}&text=TEST MESSAGE")
 
 # تشغيل البايننس
 client = Client(testnet=True)
@@ -46,7 +45,7 @@ while True:
     print("Current RSI:", last_rsi)
 
     # إشارات التداول
-    if last_rsi < 100:
+    if last_rsi < 30:
 
         print("BUY SIGNAL")
 
