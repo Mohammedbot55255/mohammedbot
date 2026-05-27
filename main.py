@@ -44,7 +44,7 @@ while True:
     print("Current RSI:", last_rsi)
 
     # إشارات التداول
-    if last_rsi < 30:
+    if last_rsi < 100:
 
         print("BUY SIGNAL")
 
