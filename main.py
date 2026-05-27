@@ -4,16 +4,13 @@ import ta
 import time
 import requests
 
-# مفاتيح البايننس
-API_KEY = "ICih6KKnRSXqXNsAOKRxNZZQ7axbXYUHWq6A0BMMZAQ1yg28OtNdckNcUft59oJ2"
-API_SECRET = "حط_API_SECRET_هنا"
 
 # بيانات بوت التليجرام
 TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
 CHAT_ID = "662991988"
 
 # تشغيل البايننس تيست نت
-client = Client(API_KEY, API_SECRET, testnet=True)
+client = Client()
 
 # العملات
 symbols = [
