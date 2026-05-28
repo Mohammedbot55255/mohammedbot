@@ -3,6 +3,8 @@ import pandas as pd
 import ta
 import time
 import requests
+import feedparser
+from textblob import TextBlob
 
 # بيانات بوت التليجرام
 TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
@@ -27,9 +29,41 @@ symbols = [
 # حفظ آخر إشارة
 last_signals = {}
 
+# تحليل الأخبار
+def get_market_sentiment():
+
+    url = "https://news.google.com/rss/search?q=bitcoin+crypto&hl=en-US&gl=US&ceid=US:en"
+
+    feed = feedparser.parse(url)
+
+    score = 0
+
+    for entry in feed.entries[:10]:
+
+        analysis = TextBlob(entry.title)
+
+        score += analysis.sentiment.polarity
+
+    average = score / 10
+
+    if average > 0.2:
+        return "BULLISH"
+
+    elif average < -0.2:
+        return "BEARISH"
+
+    else:
+        return "NEUTRAL"
+
 while True:
 
     try:
+
+        market_sentiment = get_market_sentiment()
+
+        print("======================")
+        print("MARKET:", market_sentiment)
+        print("======================")
 
         for symbol in symbols:
 
@@ -70,8 +104,12 @@ while True:
             print("PRICE:", current_price)
             print("RSI:", last_rsi)
 
-            # شراء
-            if ema20 > ema50 and macd_value > macd_signal:
+            # إشارة شراء
+            if (
+                ema20 > ema50
+                and macd_value > macd_signal
+                and market_sentiment == "BULLISH"
+            ):
 
                 signal = "BUY"
 
@@ -82,18 +120,23 @@ while True:
                         data={
                             "chat_id": CHAT_ID,
                             "text":
-                            f"🚀 BUY SIGNAL\n\n"
+                            f"🚀 STRONG BUY SIGNAL 🚀\n\n"
                             f"COIN: {symbol}\n"
                             f"PRICE: {current_price}\n"
                             f"RSI: {last_rsi}\n"
+                            f"MARKET: {market_sentiment}\n"
                             f"STRENGTH: {signal_strength}"
                         }
                     )
 
                     last_signals[symbol] = signal
 
-            # بيع
-            elif ema20 < ema50 and macd_value < macd_signal:
+            # إشارة بيع
+            elif (
+                ema20 < ema50
+                and macd_value < macd_signal
+                and market_sentiment == "BEARISH"
+            ):
 
                 signal = "SELL"
 
@@ -104,10 +147,11 @@ while True:
                         data={
                             "chat_id": CHAT_ID,
                             "text":
-                            f"🔻 SELL SIGNAL\n\n"
+                            f"🔻 STRONG SELL SIGNAL 🔻\n\n"
                             f"COIN: {symbol}\n"
                             f"PRICE: {current_price}\n"
                             f"RSI: {last_rsi}\n"
+                            f"MARKET: {market_sentiment}\n"
                             f"STRENGTH: {signal_strength}"
                         }
                     )
@@ -117,8 +161,11 @@ while True:
             else:
                 print(f"{symbol}: NO SIGNAL")
 
+        # انتظار دقيقة
         time.sleep(60)
 
     except Exception as e:
+
         print("ERROR:", e)
+
         time.sleep(30)
