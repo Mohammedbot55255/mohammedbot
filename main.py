@@ -67,9 +67,7 @@ except:
 # تشغيل دائم
 
 while True:
-
-
-try:
+    try:
 
     market_sentiment = get_market_sentiment()
 
