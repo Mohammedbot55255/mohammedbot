@@ -3,7 +3,6 @@ import pandas as pd
 import ta
 import time
 import requests
-import yfinance as yf
 
 # بيانات بوت التليجرام
 TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
