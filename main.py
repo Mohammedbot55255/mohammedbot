@@ -33,10 +33,9 @@ last_signals = {}
 
 def analyze_news():
 
-```
-try:
 
-    feed = feedparser.parse(
+try:
+     feed = feedparser.parse(
         "https://cointelegraph.com/rss"
     )
 
@@ -65,13 +64,13 @@ try:
 except:
 
     return "NEUTRAL"
-```
+
 
 # تشغيل البوت
 
 while True:
 
-```
+
 try:
 
     news_sentiment = analyze_news()
@@ -146,7 +145,7 @@ try:
         if last_signals.get(symbol) != signal:
 
             message = f'''
-```
+
 
 🚨 SIGNAL ALERT 🚨
 
@@ -161,10 +160,10 @@ RSI: {round(rsi,2)}
 STRENGTH: {signal_strength}
 
 NEWS: {news_sentiment}
-'''
 
-```
-            requests.post(
+
+
+             requests.post(
                 f"https://api.telegram.org/bot{TOKEN}/sendMessage",
                 data={
                     "chat_id": CHAT_ID,
@@ -182,4 +181,4 @@ except Exception as e:
     print("ERROR:", e)
 
     time.sleep(60)
-```
+
