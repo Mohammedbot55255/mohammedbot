@@ -5,167 +5,216 @@ import time
 import requests
 import feedparser
 from textblob import TextBlob
+from ta.trend import MACD
+from ta.momentum import RSIIndicator
+from ta.volatility import BollingerBands
+from ta.trend import EMAIndicator
 
 # بيانات بوت التليجرام
 TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
 CHAT_ID = "662991988"
 
-# تشغيل البايننس
-client = Client(
-    "",
-    "",
-    testnet=True
-)
+# تشغيل Binance
+
+client = Client()
 
 # العملات
+
 symbols = [
-    "BTCUSDT",
-    "ETHUSDT",
-    "BNBUSDT",
-    "SOLUSDT",
-    "XRPUSDT"
+"BTCUSDT",
+"ETHUSDT",
+"BNBUSDT",
+"SOLUSDT",
+"XRPUSDT"
 ]
 
-# حفظ آخر إشارة
+# منع تكرار الإشارات
+
 last_signals = {}
 
-# تحليل الأخبار
+# تحليل الأخبار بالذكاء الاصطناعي
+
 def get_market_sentiment():
 
-    url = "https://news.google.com/rss/search?q=bitcoin+crypto&hl=en-US&gl=US&ceid=US:en"
+```
+try:
 
-    feed = feedparser.parse(url)
+    feed = feedparser.parse(
+        "https://cointelegraph.com/rss"
+    )
 
-    score = 0
+    news_text = ""
 
-    for entry in feed.entries[:10]:
+    for entry in feed.entries[:5]:
+        news_text += entry.title + " "
 
-        analysis = TextBlob(entry.title)
+    analysis = TextBlob(news_text)
 
-        score += analysis.sentiment.polarity
+    sentiment = analysis.sentiment.polarity
 
-    average = score / 10
-
-    if average > 0.2:
+    if sentiment > 0:
         return "BULLISH"
 
-    elif average < -0.2:
+    elif sentiment < 0:
         return "BEARISH"
 
     else:
         return "NEUTRAL"
 
+except:
+    return "UNKNOWN"
+```
+
+# تشغيل دائم
+
 while True:
 
-    try:
+```
+try:
 
-        market_sentiment = get_market_sentiment()
+    market_sentiment = get_market_sentiment()
+
+    for symbol in symbols:
+
+        # جلب البيانات
+        klines = client.get_klines(
+            symbol=symbol,
+            interval=Client.KLINE_INTERVAL_5MINUTE,
+            limit=200
+        )
+
+        # تحويل البيانات
+        df = pd.DataFrame(klines)
+
+        # الأسعار
+        df["close"] = df[4].astype(float)
+        df["high"] = df[2].astype(float)
+        df["low"] = df[3].astype(float)
+
+        # RSI
+        rsi = RSIIndicator(df["close"])
+        df["RSI"] = rsi.rsi()
+
+        # EMA
+        ema20 = EMAIndicator(
+            df["close"],
+            window=20
+        ).ema_indicator().iloc[-1]
+
+        ema50 = EMAIndicator(
+            df["close"],
+            window=50
+        ).ema_indicator().iloc[-1]
+
+        # MACD
+        macd = MACD(df["close"])
+
+        macd_value = macd.macd().iloc[-1]
+        macd_signal = macd.macd_signal().iloc[-1]
+
+        # Bollinger Bands
+        bb = BollingerBands(df["close"])
+
+        upper_band = bb.bollinger_hband().iloc[-1]
+        lower_band = bb.bollinger_lband().iloc[-1]
+
+        # السعر الحالي
+        current_price = df["close"].iloc[-1]
+
+        # RSI الحالي
+        last_rsi = df["RSI"].iloc[-1]
+
+        # قوة الصفقة
+        signal_strength = round(
+            abs(macd_value - macd_signal) * 100,
+            2
+        )
+
+        # وقف خسارة
+        stop_loss = round(
+            current_price * 0.98,
+            2
+        )
+
+        # جني أرباح
+        take_profit = round(
+            current_price * 1.04,
+            2
+        )
 
         print("======================")
+        print("COIN:", symbol)
+        print("PRICE:", current_price)
+        print("RSI:", last_rsi)
         print("MARKET:", market_sentiment)
-        print("======================")
 
-        for symbol in symbols:
+        # BUY SIGNAL
+        if (
+            ema20 > ema50
+            and macd_value > macd_signal
+            and last_rsi < 70
+            and market_sentiment != "BEARISH"
+        ):
 
-            # جلب البيانات
-            klines = client.get_klines(
-                symbol=symbol,
-                interval=Client.KLINE_INTERVAL_1MINUTE,
-                limit=100
-            )
+            signal = "BUY"
 
-            # تحويل البيانات
-            df = pd.DataFrame(klines)
+            if last_signals.get(symbol) != signal:
 
-            # سعر الإغلاق
-            df['close'] = df[4].astype(float)
+                requests.post(
+                    f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                    data={
+                        "chat_id": CHAT_ID,
+                        "text":
+                        f"🚀 BUY SIGNAL 🚀\n\n"
+                        f"COIN: {symbol}\n"
+                        f"PRICE: {current_price}\n"
+                        f"RSI: {round(last_rsi,2)}\n"
+                        f"AI MARKET: {market_sentiment}\n"
+                        f"STRENGTH: {signal_strength}%\n"
+                        f"TAKE PROFIT: {take_profit}\n"
+                        f"STOP LOSS: {stop_loss}"
+                    }
+                )
 
-            # RSI
-            rsi = ta.momentum.RSIIndicator(df['close'])
-            df['RSI'] = rsi.rsi()
+                last_signals[symbol] = signal
 
-            current_price = df['close'].iloc[-1]
-            last_rsi = round(df['RSI'].iloc[-1], 2)
+        # SELL SIGNAL
+        elif (
+            ema20 < ema50
+            and macd_value < macd_signal
+            and market_sentiment != "BULLISH"
+        ):
 
-            # EMA
-            ema20 = df["close"].ewm(span=20).mean().iloc[-1]
-            ema50 = df["close"].ewm(span=50).mean().iloc[-1]
+            signal = "SELL"
 
-            # MACD
-            macd = ta.trend.MACD(df["close"])
-            macd_value = macd.macd().iloc[-1]
-            macd_signal = macd.macd_signal().iloc[-1]
+            if last_signals.get(symbol) != signal:
 
-            # قوة الإشارة
-            signal_strength = round(abs(macd_value - macd_signal), 2)
+                requests.post(
+                    f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                    data={
+                        "chat_id": CHAT_ID,
+                        "text":
+                        f"🔻 SELL SIGNAL 🔻\n\n"
+                        f"COIN: {symbol}\n"
+                        f"PRICE: {current_price}\n"
+                        f"RSI: {round(last_rsi,2)}\n"
+                        f"AI MARKET: {market_sentiment}\n"
+                        f"STRENGTH: {signal_strength}%"
+                    }
+                )
 
-            print("====================")
-            print("COIN:", symbol)
-            print("PRICE:", current_price)
-            print("RSI:", last_rsi)
+                last_signals[symbol] = signal
 
-            # إشارة شراء
-            if (
-                ema20 > ema50
-                and macd_value > macd_signal
-                and market_sentiment == "BULLISH"
-            ):
+        else:
 
-                signal = "BUY"
+            print(symbol, "NO SIGNAL")
 
-                if last_signals.get(symbol) != signal:
+    # انتظار 5 دقائق
+    time.sleep(300)
 
-                    requests.post(
-                        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-                        data={
-                            "chat_id": CHAT_ID,
-                            "text":
-                            f"🚀 STRONG BUY SIGNAL 🚀\n\n"
-                            f"COIN: {symbol}\n"
-                            f"PRICE: {current_price}\n"
-                            f"RSI: {last_rsi}\n"
-                            f"MARKET: {market_sentiment}\n"
-                            f"STRENGTH: {signal_strength}"
-                        }
-                    )
+except Exception as e:
 
-                    last_signals[symbol] = signal
+    print("ERROR:", e)
 
-            # إشارة بيع
-            elif (
-                ema20 < ema50
-                and macd_value < macd_signal
-                and market_sentiment == "BEARISH"
-            ):
-
-                signal = "SELL"
-
-                if last_signals.get(symbol) != signal:
-
-                    requests.post(
-                        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-                        data={
-                            "chat_id": CHAT_ID,
-                            "text":
-                            f"🔻 STRONG SELL SIGNAL 🔻\n\n"
-                            f"COIN: {symbol}\n"
-                            f"PRICE: {current_price}\n"
-                            f"RSI: {last_rsi}\n"
-                            f"MARKET: {market_sentiment}\n"
-                            f"STRENGTH: {signal_strength}"
-                        }
-                    )
-
-                    last_signals[symbol] = signal
-
-            else:
-                print(f"{symbol}: NO SIGNAL")
-
-        # انتظار دقيقة
-        time.sleep(60)
-
-    except Exception as e:
-
-        print("ERROR:", e)
-
-        time.sleep(30)
+    time.sleep(60)
+```
