@@ -9,7 +9,11 @@ TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
 CHAT_ID = "662991988"
 
 # تشغيل البايننس
-client = Client()
+client = Client(
+    "",
+    "",
+    testnet=True
+)
 
 # العملات
 symbols = [
