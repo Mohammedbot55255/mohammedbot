@@ -63,13 +63,13 @@ try:
 
 except:
     return "UNKNOWN"
-```
+
 
 # تشغيل دائم
 
 while True:
 
-```
+
 try:
 
     market_sentiment = get_market_sentiment()
@@ -217,4 +217,4 @@ except Exception as e:
     print("ERROR:", e)
 
     time.sleep(60)
-```
+    
