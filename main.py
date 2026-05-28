@@ -38,7 +38,6 @@ def analyze_news():
     return "NEUTRAL"
 
 try:
-
     feed = feedparser.parse(
         "https://cointelegraph.com/rss"
     )
@@ -217,4 +216,3 @@ except Exception as e:
     print("ERROR:", e)
 
     time.sleep(60)
-    
