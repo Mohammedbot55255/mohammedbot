@@ -23,93 +23,91 @@ while True:
         for symbol in symbols:
 
             # جلب البيانات
-            data = yf.download(
-                symbol,
-                period="1d",
-                interval="1m"
+            klines = client.get_klines(
+                symbol=symbol,
+                interval=Client.KLINE_INTERVAL_1MINUTE,
+                limit=100
             )
 
-            df = pd.DataFrame(data)
+            # تحويل البيانات
+            df = pd.DataFrame(klines)
 
             # سعر الإغلاق
-            df['close'] = df['Close']
+            df['close'] = df[4].astype(float)
 
             # RSI
             rsi = ta.momentum.RSIIndicator(df['close'])
-
             df['RSI'] = rsi.rsi()
 
+            current_price = df['close'].iloc[-1]
+            last_rsi = round(df['RSI'].iloc[-1], 2)
+
             # EMA
-            ema20 = df['close'].ewm(span=20).mean().iloc[-1]
-            ema50 = df['close'].ewm(span=50).mean().iloc[-1]
+            ema20 = df["close"].ewm(span=20).mean().iloc[-1]
+            ema50 = df["close"].ewm(span=50).mean().iloc[-1]
 
             # MACD
-            macd = ta.trend.MACD(df['close'])
-
+            macd = ta.trend.MACD(df["close"])
             macd_value = macd.macd().iloc[-1]
             macd_signal = macd.macd_signal().iloc[-1]
 
-            # السعر الحالي
-            current_price = df['close'].iloc[-1]
+            # قوة الإشارة
+            signal_strength = round(abs(macd_value - macd_signal), 2)
 
-            print(symbol)
+            print("===================")
+            print("COIN:", symbol)
             print("PRICE:", current_price)
+            print("RSI:", last_rsi)
 
-# حساب قوة الإشارة
-signal_strength = round(abs(macd_value - macd_signal), 2)
+            # شراء
+            if ema20 > ema50 and macd_value > macd_signal:
 
-# إشارة شراء
-if ema20 > ema50 and macd_value > macd_signal:
+                signal = "BUY"
 
-    signal = "BUY"
+                if last_signals.get(symbol) != signal:
 
-    if last_signals.get(symbol) != signal:
+                    requests.post(
+                        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                        data={
+                            "chat_id": CHAT_ID,
+                            "text":
+                            f"🚀 BUY SIGNAL\n\n"
+                            f"COIN: {symbol}\n"
+                            f"PRICE: {current_price}\n"
+                            f"RSI: {last_rsi}\n"
+                            f"STRENGTH: {signal_strength}"
+                        }
+                    )
 
-        requests.post(
-            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-            data={
-                "chat_id": CHAT_ID,
-                "text":
-                f"🚀 BUY SIGNAL\n\n"
-                f"COIN: {symbol}\n"
-                f"PRICE: {current_price}\n"
-                f"RSI: {round(df['RSI'].iloc[-1],2)}\n"
-                f"STRENGTH: {signal_strength}"
-            }
-        )
+                    last_signals[symbol] = signal
 
-        last_signals[symbol] = signal
+            # بيع
+            elif ema20 < ema50 and macd_value < macd_signal:
 
-# إشارة بيع
-elif ema20 < ema50 and macd_value < macd_signal:
+                signal = "SELL"
 
-    signal = "SELL"
+                if last_signals.get(symbol) != signal:
 
-    if last_signals.get(symbol) != signal:
+                    requests.post(
+                        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                        data={
+                            "chat_id": CHAT_ID,
+                            "text":
+                            f"🔻 SELL SIGNAL\n\n"
+                            f"COIN: {symbol}\n"
+                            f"PRICE: {current_price}\n"
+                            f"RSI: {last_rsi}\n"
+                            f"STRENGTH: {signal_strength}"
+                        }
+                    )
 
-        requests.post(
-            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-            data={
-                "chat_id": CHAT_ID,
-                "text":
-                f"🔻 SELL SIGNAL\n\n"
-                f"COIN: {symbol}\n"
-                f"PRICE: {current_price}\n"
-                f"RSI: {round(df['RSI'].iloc[-1],2)}\n"
-                f"STRENGTH: {signal_strength}"
-            }
-        )
+                    last_signals[symbol] = signal
 
-        last_signals[symbol] = signal
+            else:
+                print(f"{symbol}: NO SIGNAL")
 
-else:
-    print("NO SIGNAL")
-    
-        # انتظار دقيقة
         time.sleep(60)
 
     except Exception as e:
-
         print("ERROR:", e)
-
         time.sleep(30)
