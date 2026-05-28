@@ -34,8 +34,8 @@ last_signals = {}
 
 # تحليل الأخبار بالذكاء الاصطناعي
 
-def get_market_sentiment():
-
+def analyze_news():
+    return "NEUTRAL"
 ```
 try:
 
