@@ -1,3 +1,4 @@
+from binance.client import Client
 import pandas as pd
 import ta
 import time
@@ -8,12 +9,19 @@ import yfinance as yf
 TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
 CHAT_ID = "662991988"
 
+# تشغيل البايننس
+client = Client()
+
 # العملات
 symbols = [
-    "BTC-USD",
-    "ETH-USD",
-    "BNB-USD"
+    "BTCUSDT",
+    "ETHUSDT",
+    "BNBUSDT",
+    "SOLUSDT",
+    "XRPUSDT"
 ]
+
+# حفظ آخر إشارة
 last_signals = {}
 
 while True:
@@ -54,7 +62,7 @@ while True:
             # قوة الإشارة
             signal_strength = round(abs(macd_value - macd_signal), 2)
 
-            print("===================")
+            print("====================")
             print("COIN:", symbol)
             print("PRICE:", current_price)
             print("RSI:", last_rsi)
