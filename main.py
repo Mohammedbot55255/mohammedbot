@@ -6,12 +6,12 @@ import requests
 import feedparser
 from textblob import TextBlob
 
-
-# بيانات بوت التليجرام
+# بيانات التليجرام
 
 TOKEN = "8108797876:AAGH62lPHmDbuLLapr_XluciZlD5hCCZhiE"
 CHAT_ID = "662991988"
-# تشغيل البايننس
+
+# تشغيل Binance
 
 client = Client()
 
@@ -29,10 +29,12 @@ symbols = [
 
 last_signals = {}
 
-# تحليل الأخبار بالذكاء الاصطناعي
+# تحليل الأخبار
 
 def analyze_news():
-     try:
+
+```
+try:
 
     feed = feedparser.parse(
         "https://cointelegraph.com/rss"
@@ -61,10 +63,16 @@ def analyze_news():
         return "NEUTRAL"
 
 except:
+
     return "NEUTRAL"
+```
+
+# تشغيل البوت
+
 while True:
 
-    try:
+```
+try:
 
     news_sentiment = analyze_news()
 
@@ -80,7 +88,7 @@ while True:
             limit=100
         )
 
-         df = pd.DataFrame(klines)
+        df = pd.DataFrame(klines)
 
         close = df[4].astype(float)
 
@@ -113,6 +121,7 @@ while True:
 
         signal = "NO SIGNAL"
 
+        # شراء
         if (
             ema20 > ema50 and
             macd_value > macd_signal and
@@ -122,7 +131,8 @@ while True:
 
             signal = "BUY"
 
-         elif (
+        # بيع
+        elif (
             ema20 < ema50 and
             macd_value < macd_signal and
             rsi > 30 and
@@ -135,7 +145,7 @@ while True:
 
         if last_signals.get(symbol) != signal:
 
-            message = f"""
+            message = f'''
 ```
 
 🚨 SIGNAL ALERT 🚨
@@ -151,8 +161,9 @@ RSI: {round(rsi,2)}
 STRENGTH: {signal_strength}
 
 NEWS: {news_sentiment}
-"""
+'''
 
+```
             requests.post(
                 f"https://api.telegram.org/bot{TOKEN}/sendMessage",
                 data={
@@ -163,7 +174,7 @@ NEWS: {news_sentiment}
 
             last_signals[symbol] = signal
 
-    print("Waiting 5 minutes...")
+    print("WAITING 5 MINUTES...")
     time.sleep(300)
 
 except Exception as e:
@@ -171,3 +182,4 @@ except Exception as e:
     print("ERROR:", e)
 
     time.sleep(60)
+```
