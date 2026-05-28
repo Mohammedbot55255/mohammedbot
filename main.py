@@ -36,7 +36,7 @@ last_signals = {}
 
 def analyze_news():
     return "NEUTRAL"
-```
+
 try:
 
     feed = feedparser.parse(
